@@ -27,12 +27,14 @@ def most_common(var)
   arr = []
   contents.each do |row|
     reg = row[:regdate]
-    x = Time.strptime(reg, "%m/%d/%y %k:%M").send(var) unless var == :wday
-    x = Time.strptime(reg, "%m/%d/%y %k:%M").strftime('%A') if var == :wday
-
+    x = Time.strptime(reg, "%m/%d/%y %k:%M").send(var)
     arr << x
   end
   arr.group_by { |n| n }.values.max_by(&:size).first
+end
+
+def num_to_day(num)
+  %w(Sunday Monday Tuesday Wednesday Thursday Friday Staurday)[num]
 end
 
 def legislators_by_zipcode(zip)
@@ -75,4 +77,4 @@ end
 # end
 
 puts "Most common hour: #{most_common(:hour)}."
-puts "Most common day: #{most_common(:wday)}."
+puts "Most common day: #{num_to_day(most_common(:wday))}."
