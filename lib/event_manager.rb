@@ -2,6 +2,14 @@ require 'csv'
 require 'google/apis/civicinfo_v2'
 require 'erb'
 
+def open_csv
+  CSV.open(
+    'event_attendees.csv',
+    headers: true,
+    header_converters: :symbol
+  )
+end
+
 def clean_zipcode(zipcode)
   zipcode.to_s.rjust(5,"0")[0..4]
 end
@@ -12,6 +20,19 @@ def clean_phone_number(number)
   return clean_num[1..10] if (clean_num.length == 11 && clean_num[0] == '1')
 
   'N/A'
+end
+
+def most_common(var)
+  contents = open_csv
+  arr = []
+  contents.each do |row|
+    reg = row[:regdate]
+    x = Time.strptime(reg, "%m/%d/%y %k:%M").send(var) unless var == :wday
+    x = Time.strptime(reg, "%m/%d/%y %k:%M").strftime('%A') if var == :wday
+
+    arr << x
+  end
+  arr.group_by { |n| n }.values.max_by(&:size).first
 end
 
 def legislators_by_zipcode(zip)
@@ -39,24 +60,19 @@ def save_thank_you_letter(id, form_letter)
   end
 end
 
-puts 'EventManager initialized.'
+# template_letter = File.read('form_letter.erb')
+# erb_template = ERB.new template_letter
 
-contents = CSV.open(
-  'event_attendees.csv',
-  headers: true,
-  header_converters: :symbol
-)
+# contents.each do |row|
+#   id = row[0]
+#   name = row[:first_name]
+#   zipcode = clean_zipcode(row[:zipcode])
+#   legislators = legislators_by_zipcode(zipcode)
 
-template_letter = File.read('form_letter.erb')
-erb_template = ERB.new template_letter
+#   form_letter = erb_template.result(binding)
 
-contents.each do |row|
-  id = row[0]
-  name = row[:first_name]
-  zipcode = clean_zipcode(row[:zipcode])
-  legislators = legislators_by_zipcode(zipcode)
+#   save_thank_you_letter(id, form_letter)
+# end
 
-  form_letter = erb_template.result(binding)
-
-  save_thank_you_letter(id, form_letter)
-end
+puts "Most common hour: #{most_common(:hour)}."
+puts "Most common day: #{most_common(:wday)}."
